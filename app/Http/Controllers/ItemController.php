@@ -55,7 +55,7 @@ class ItemController extends Controller
         $Item_create = new Item();
         $Item_create->item_name = $request->input('item_name');
         $Item_create->descriptions = $request->input('descriptions');
-        $Item_create->manufacture_date = $request->input('manufacture_date');
+        $Item_create->manufacture_date = date("Y-m-d", strtotime($request->input('manufacture_date')));
         $Item_create->images = json_encode($images_data);
         $Item_create->save();
 
@@ -112,7 +112,7 @@ class ItemController extends Controller
         $Item_create = Item::find($id);
         $Item_create->item_name = $request->input('item_name');
         $Item_create->descriptions = $request->input('descriptions');
-        $Item_create->manufacture_date = $request->input('manufacture_date');
+        $Item_create->manufacture_date = date("Y-m-d", strtotime($request->input('manufacture_date')));
         if($request->file('images')){
             $Item_create->images = json_encode($images_data);
         }
@@ -131,8 +131,12 @@ class ItemController extends Controller
     public function destroy(Item $item)
     {
         $item->delete();
+
+        return response()->json([
+            'success' => 'Record deleted successfully!'
+        ]);    
   
-        return redirect()->route('items.index')
-                        ->with('success','Item deleted successfully');
+        // return redirect()->route('items.index')
+        //                 ->with('success','Item deleted successfully');
     }
 }

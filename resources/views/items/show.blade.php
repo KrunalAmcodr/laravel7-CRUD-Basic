@@ -39,8 +39,8 @@
                                 <tr>
                                     <td>{{ $item->id }}</td>
                                     <td>{{ $item->item_name }}</td>
-                                    <td>{!! substr($item->descriptions, 0, 100) !!}</td>
-                                    <td>{{ $item->manufacture_date }}</td>
+                                    <td>{!! $item->descriptions, 0, 100 !!}</td>
+                                    <td>{{ date('M d, Y', strtotime($item->manufacture_date)) }}</td>
                                     <td>
                                         @foreach (json_decode($item->images) as $image)
                                             <img src="{{ asset('image/' . $image) }}" width="100" height="auto" class="m-1"/>

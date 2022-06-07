@@ -12,13 +12,15 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <form action="{{ route('items.store') }}" method="POST" class="needs-validation" enctype="multipart/form-data" novalidate>
+                        <form action="{{ route('items.store') }}" method="POST" class="needs-validation createitem-form"
+                            enctype="multipart/form-data" novalidate>
                             @csrf
                             <div class="form-row">
                                 <div class="col">
                                     <label for="item_name">Item's Name</label>
-                                    <input type="text" class="form-control @error('item_name') is-invalid @enderror" name="item_name" id="item_name"
-                                        placeholder="Item's Name" value="{{ old('item_name') }}" required>
+                                    <input type="text" class="form-control @error('item_name') is-invalid @enderror"
+                                        name="item_name" id="item_name" placeholder="Item's Name"
+                                        value="{{ old('item_name') }}" required>
                                     <div class="valid-feedback">
                                         Looks good!
                                     </div>
@@ -30,7 +32,8 @@
                             <div class="form-row mt-3">
                                 <div class="editor w-100">
                                     <label for="descriptions">Descriptions</label>
-                                    <textarea class="ckeditor form-control @error('descriptions') is-invalid @enderror" id="descriptions" name="descriptions" required>{{ old('descriptions') }}</textarea>
+                                    <textarea class="ckeditor form-control @error('descriptions') is-invalid @enderror" id="descriptions"
+                                        name="descriptions" required>{{ old('descriptions') }}</textarea>
                                 </div>
                                 <div class="valid-feedback">
                                     Looks good!
@@ -41,7 +44,10 @@
                             </div>
                             <div class="form-row mt-3">
                                 <label for="manufacture_date">Manufacture Date</label>
-                                <input type="date" class="form-control @error('manufacture_date') is-invalid @enderror" name="manufacture_date" id="manufacture_date" value="{{ old('manufacture_date') }}" required>
+                                <input type='text' class="form-control" name="manufacture_date" id="manufacture_date"
+                                    placeholder="Select Manufacture Date"
+                                    @if ($errors->any()) value="{{ date('m/d/Y', strtotime(old('manufacture_date'))) }}" @endif
+                                    required>
                                 <div class="valid-feedback">
                                     Looks good!
                                 </div>
@@ -51,13 +57,22 @@
                             </div>
                             <div class="form-row my-3">
                                 <label for="validatedImagesFile" class="form-label">Images</label>
-                                <input type="file" class="@error('images') is-invalid @enderror form-control" id="validatedImagesFile" name="images[]" value="{{ old('images') }}" required multiple>
+                                <input type="file" class="@error('images') is-invalid @enderror form-control"
+                                    id="validatedImagesFile" name="images[]" value="{{ old('images') }}" required
+                                    multiple>
                                 <div class="valid-feedback">
                                     Looks good!
                                 </div>
-                                <div class="invalid-feedback">
-                                    Please select images.
-                                </div>
+                                @if (!$errors->any())
+                                    <div class="invalid-feedback">
+                                        Please select images.
+                                    </div>
+                                @endif
+                                @error('images')
+                                    <span class="invalid-feedback" role="alert">
+                                        {{ $message }}
+                                    </span>
+                                @enderror
                             </div>
                             <button class="btn btn-primary mt-4" type="submit">Submit Item</button>
                         </form>
@@ -69,7 +84,6 @@
 @endsection
 
 @push('extrascript')
-    <script src="//cdn.ckeditor.com/4.14.0/standard/ckeditor.js"></script>
     <script>
         // Example starter JavaScript for disabling form submissions if there are invalid fields
         (function() {
@@ -87,7 +101,31 @@
                         form.classList.add('was-validated');
                     }, false);
                 });
+                $('#manufacture_date').datepicker({
+                    format: 'mm/dd/yyyy',
+                    autoclose: true,
+                })
+                CKEDITOR.instances.descriptions.on('change', function() {
+                    if (CKEDITOR.instances.descriptions.getData() == '') {
+                        $('.ckeditor').parent().parent().find('.invalid-feedback').addClass('d-block');
+                        $('#cke_descriptions').addClass('border border-danger');
+                    } else {
+                        $('.invalid-feedback.d-block').removeClass('d-block');
+                        $('#cke_descriptions.border').removeClass('border-danger');
+                        $('#cke_descriptions.border').addClass('border-success');
+                    }
+                });
             }, false);
-        })(jQuery($));
+            jQuery('[type="submit"]').on('click', function() {
+                if (CKEDITOR.instances.descriptions.getData() == '') {
+                    $('.ckeditor').parent().parent().find('.invalid-feedback').addClass('d-block');
+                    $('#cke_descriptions').addClass('border border-danger');
+                } else {
+                    $('.invalid-feedback.d-block').removeClass('d-block');
+                    $('#cke_descriptions.border').removeClass('border-danger');
+                    $('#cke_descriptions.border').addClass('border-success');
+                }
+            })
+        })();
     </script>
 @endpush
