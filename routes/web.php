@@ -20,4 +20,5 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::resource('items','ItemController')->middleware('auth');
+Route::resource('ajaxitems/updateitem','ItemajaxController@updateitem')->middleware('auth');
 Route::resource('ajaxitems','ItemajaxController')->middleware('auth');

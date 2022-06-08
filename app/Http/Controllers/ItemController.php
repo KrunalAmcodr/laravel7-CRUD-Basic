@@ -36,6 +36,8 @@ class ItemController extends Controller
      */
     public function store(Request $request)
     {
+        echo '<pre>';
+        print_r($request->all());exit;
         $request->validate([
             'item_name' => 'required',
             'descriptions' => 'required',
