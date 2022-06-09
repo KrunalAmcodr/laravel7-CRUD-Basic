@@ -5,6 +5,18 @@
         label.error {
             color: red;
         }
+
+        tbody.itemtable-body tr td {
+            align-items: center;
+            vertical-align: middle;
+            justify-content: center;
+        }
+
+        i.close-icon {
+            top: -10px;
+            right: 0;
+            cursor: pointer;
+        }
     </style>
     <div class="container">
         <div class="row justify-content-center">
@@ -34,12 +46,12 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>S. No</th>
+                                    <th style="width: 50px;">Sr. No</th>
                                     <th>Item Name</th>
                                     <th>Descriptions</th>
                                     <th>Date</th>
                                     <th>Images</th>
-                                    <th style="width:210px;">Action</th>
+                                    <th style="width:150px;">Action</th>
                                 </tr>
                             </thead>
                             <tbody class="itemtable-body">
@@ -93,8 +105,9 @@
                             <span class="text-danger errorspan" role="alert"></span>
                         </div>
                         <div class="mt-3" id="selectedimage">
+                            <input type="hidden" id="itemslectedimage" name="itemslectedimage">
                             <h5>Selected Images:</h5>
-                            <div id="imagelist"></div>
+                            <div id="imagelist" class="d-flex mt-3"></div>
                         </div>
                     </form>
                     <div id="viewitems">
@@ -138,7 +151,7 @@
                 btnUpdate = $('#updateajaxitem'),
                 divSelectedImages = $('#selectedimage'),
                 divViewItems = $('#viewitems');
-                path = "{{ asset('image/') }}";
+            path = "{{ asset('image/') }}";
 
             var table = $('#itemtable').DataTable({
                 processing: true,
@@ -166,11 +179,13 @@
                     {
                         data: 'manufacture_date',
                         name: 'manufacture_date',
-                        // "render": function(data) {
-                        //     var date = new Date(data);
-                        //     var month = date.getMonth() + 1;
-                        //     return (month.toString().length > 1 ? month : "0" + month) + "/" + date.getDate() + "/" + date.getFullYear();
-                        // }
+                        "render": function(data) {
+                            var date = new Date(data);
+                            // var month = date.getMonth() + 1;
+                            // return (month.toString().length > 1 ? month : "0" + month) + "/" + date.getDate() + "/" + date.getFullYear();
+                            return (('0' + (date.getMonth() + 1)).slice(-2) + "/" + ('0' + date
+                                .getDate()).slice(-2) + "/" + +date.getFullYear());
+                        }
                     },
                     {
                         data: 'images',
@@ -189,8 +204,21 @@
                         searchable: false
                     },
                     {
-                        data: 'action',
+                        data: null,
                         name: 'action',
+                        render: function(data, type, full, meta) {
+                            var html =
+                                '<button class="btn btn-info btn-edit" id="editajaxitem" data-rowid="' +
+                                data.id +
+                                '"><i class="bi bi-pencil-square"></i></button> ';
+                            html += '<button class="btn btn-primary btn-view" data-rowid="' + data
+                                .id + '" id="viewajaxitem"><i class="bi bi-eye"></i></button> ';
+                            html += '<button data-rowid="' + data.id +
+                                '" class="btn btn-danger btn-delete" id="deleteajaxitem"><i class="bi bi-trash3"></i></button>';
+                            return html;
+                        },
+                        // className: "dt-center editor-edit",
+                        // defaultContent: '<i class="bi bi-pencil-square"></i>',
                         orderable: false,
                         searchable: false
                     },
@@ -256,23 +284,37 @@
                         var dataCleanImages = $.parseJSON(value);
                         var imageHtml = '';
                         $.each(dataCleanImages, function(key, value) {
-                            imageHtml += '<img src="' + path + '/' + value.replaceAll(
-                                    "\"", "") +
-                                '" width="100" height="auto" class="m-1" />';
+                            imageHtml +=
+                                "<div class='selected-image-container position-relative d-inline-flex mr-2'><input type='hidden' class='selectedimageinput' name='selectedimageinput[]' value='" +value +"'>";imageHtml += '<img src="' + path + '/' + value.replaceAll("\"", "") +'" width="100" height="auto" /><i class="bi bi-x-circle-fill position-absolute cursor-pointer close-icon text-danger" id="removeimage"></i></div>';
                         });
                         $('#imagelist').empty().append(imageHtml);
                     } else if (key == 'descriptions') {
                         CKEDITOR.instances.descriptions.setData(value)
+                    } else if (key == 'manufacture_date') {
+                        var date = new Date(value);
+                        var dateFormated = ('0' + (date.getMonth() + 1)).slice(-2) + "/" + ('0' +
+                            date.getDate()).slice(-2) + "/" + +date.getFullYear();
+                        form.find('#' + key).val(dateFormated);
                     } else {
                         form.find('#' + key).val(value);
                     }
                 })
                 modal.modal()
+                for (var i = 0; i < $(".selectedimageinput").length; i++) {
+                    console.log($($(".selectedimageinput")[i]).val());
+                }
+            })
+
+            $(document).on('click', '#removeimage', function() {
+                $(this).parent().remove();
+                if ($('#imagelist').is(':empty')){
+                    divSelectedImages.hide();
+                }
             })
 
             btnUpdate.click(function() {
 
-                if (!confirm("Are you sure?")) return;
+                // if (!confirm("Are you sure?")) return;
                 var formData = new FormData($('#ajaxitem-form')[0]);
                 formData.append('descriptions', CKEDITOR.instances.descriptions.getData());
                 $('.errorspan').text('');
@@ -304,10 +346,9 @@
 
             $(document).on('click', '#deleteajaxitem', function() {
                 if (!confirm("Are you sure?")) return;
-                let routeurl = $(this).data('routeurl');
                 $.ajax({
                     type: "DELETE",
-                    url: routeurl,
+                    url: '/ajaxitems/' + $(this).data('rowid'),
                     success: function(data) {
                         table.draw();
                     },
@@ -335,10 +376,13 @@
                                     "\"", "") +
                                 '" width="100" height="auto" class="m-1" />';
                         });
-                        divViewItems.find('.' + key).empty().append('<h4 class="text-capitalize">'+key.replace('_', ' ')+'</h4>' + imageHtml);
+                        divViewItems.find('.' + key).empty().append('<h4 class="text-capitalize">' +
+                            key.replace('_', ' ') + '</h4>' + imageHtml);
                     } else {
-                        var heading = '<h4>'+divViewItems.find('.' + key).find('h4').html()+'</h4>'
-                        divViewItems.find('.' + key).empty().append('<h4 class="text-capitalize">'+key.replace('_', ' ')+'</h4>' + value);
+                        var heading = '<h4>' + divViewItems.find('.' + key).find('h4').html() +
+                            '</h4>'
+                        divViewItems.find('.' + key).empty().append('<h4 class="text-capitalize">' +
+                            key.replace('_', ' ') + '</h4>' + value);
                     }
                 })
             })

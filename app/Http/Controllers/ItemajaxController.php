@@ -20,13 +20,10 @@ class ItemajaxController extends Controller
 
         if ($request->ajax()) {
             $ajaxitems = Itemajax::all();
-            return datatables()->of($ajaxitems)->addIndexColumn()->escapeColumns([])
-                ->addColumn('action', function ($row) {
-                    $html = '<button class="btn btn-info btn-edit" id="editajaxitem" data-rowid="' . $row->id . '" data-routeurl="'. route('ajaxitems.update', $row->id) .'">Edit</button> ';
-                    $html .= '<button class="btn btn-primary btn-view" data-rowid="' . $row->id . '" id="viewajaxitem" data-routeurl="'. route('ajaxitems.show', $row->id) .'">View</button> ';
-                    $html .= '<button data-rowid="' . $row->id . '" class="btn btn-danger btn-delete" id="deleteajaxitem" data-routeurl="'. route('ajaxitems.destroy', $row->id) .'">Delete</button>';
-                    return $html;
-                })->toJson();
+            return datatables()->of($ajaxitems)
+                    ->addIndexColumn()
+                    ->escapeColumns([])
+                    ->toJson();
         }
 
         return view('ajaxitems.ajaxitems');
@@ -51,7 +48,7 @@ class ItemajaxController extends Controller
     public function store(Request $request)
     {
         if(!empty($request->id)){
-            if($request->hasfile('images')){
+            if($request->hasfile('images') || empty($request->selectedimageinput)){
                 $request->validate([
                     'item_name' => 'required',
                     'descriptions' => 'required',
@@ -78,13 +75,29 @@ class ItemajaxController extends Controller
         
         if($request->hasfile('images')){
             foreach($request->file('images') as $image){
-                $name = $image->getClientOriginalName();
+                $name = $request->item_name . '_' . rand('0', '100000') . '_' . $image->getClientOriginalName();
                 $image->move(public_path() . '/image/', $name);
                 $images_data[] = $name;
             }
         }
 
-        if($request->hasfile('images')){
+        if(isset($request->selectedimageinput) && !empty($request->selectedimageinput) && !empty($request->id)){
+            foreach($request->selectedimageinput as $fileprevname){
+                $images_data[] = $fileprevname;
+            }
+        }
+
+        if(isset($images_data) && !empty($request->id)){
+            $itemsdata = Itemajax::find($request->id);
+            $finalitemimages = array_diff(json_decode($itemsdata->images), $images_data);
+            foreach($finalitemimages as $imageitem){
+                if(file_exists(public_path() . '/image/' . $imageitem)){
+                    unlink(public_path() . '/image/' . $imageitem);
+                }
+            }
+        }
+
+        if($request->hasfile('images') || !empty($request->id)){
             $Item_create = Itemajax::updateOrCreate(
                 ['id' => $request->id],
                 [
@@ -151,7 +164,14 @@ class ItemajaxController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $itemsdata = Itemajax::find($id);
+
+        foreach(json_decode($itemsdata->images) as $imageitem){
+            if(file_exists(public_path() . '/image/' . $imageitem)){
+                unlink(public_path() . '/image/' . $imageitem);
+            }
+        }
+
         Itemajax::find($id)->delete();
      
         return response()->json(['code'=>200, 'message'=>'Item deleted successfully.'], 200);
