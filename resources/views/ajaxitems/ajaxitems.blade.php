@@ -61,7 +61,6 @@
                         enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="id" id="id">
-                        <input type="hidden" name="update-route" id="update-route">
                         <div class="form-row">
                             <div class="col">
                                 <label for="item_name">Item's Name</label>
@@ -98,6 +97,12 @@
                             <div id="imagelist"></div>
                         </div>
                     </form>
+                    <div id="viewitems">
+                        <div class="item_name"></div>
+                        <div class="descriptions"></div>
+                        <div class="manufacture_date"></div>
+                        <div class="images"></div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-primary" type="button" id="saveajaxitem">Submit Item</button>
@@ -130,9 +135,9 @@
                 form = $('#ajaxitem-form'),
                 btnAdd = $('#addajaxitem'),
                 btnSave = $('#saveajaxitem'),
-                btnEdit = $('#editajaxitem'),
                 btnUpdate = $('#updateajaxitem'),
                 divSelectedImages = $('#selectedimage'),
+                divViewItems = $('#viewitems');
                 path = "{{ asset('image/') }}";
 
             var table = $('#itemtable').DataTable({
@@ -196,9 +201,13 @@
                 $("#ajaxitem_id").val('');
                 modal.modal('show');
                 modal.find('.modal-title').text('Add New Item');
+                $('#ajaxitem-form')[0].reset();
+                CKEDITOR.instances.descriptions.setData('');
                 btnSave.show();
                 btnUpdate.hide();
                 divSelectedImages.hide();
+                divViewItems.hide();
+                form.show();
             })
 
             btnSave.click(function(e) {
@@ -237,6 +246,8 @@
             $(document).on('click', '#editajaxitem', function() {
                 btnSave.hide();
                 btnUpdate.show();
+                divViewItems.hide();
+                form.show();
                 modal.find('.modal-title').text('Update Item');
                 var rowData = table.row($(this).parents('tr')).data();
                 divSelectedImages.show();
@@ -256,25 +267,19 @@
                         form.find('#' + key).val(value);
                     }
                 })
-                var getUrl = window.location;
-                var baseUrl = getUrl .protocol + "//" + getUrl.host + "/" + getUrl.pathname.split('/')[1];
-
-                form.find('input#update-route').val(baseUrl + '/updateitem/' + rowData.id);
-
                 modal.modal()
             })
 
             btnUpdate.click(function() {
 
-                if(!confirm("Are you sure?")) return;
+                if (!confirm("Are you sure?")) return;
                 var formData = new FormData($('#ajaxitem-form')[0]);
                 formData.append('descriptions', CKEDITOR.instances.descriptions.getData());
-                var itemEditRoute = form.find('input#update-route').val();
                 $('.errorspan').text('');
                 $.ajax({
-                    url: itemEditRoute,
+                    url: "{{ route('ajaxitems.store') }}",
                     data: formData,
-                    type: "POST",
+                    method: 'POST',
                     contentType: false,
                     processData: false,
                     success: function(response) {
@@ -293,6 +298,47 @@
                                 $('#' + key).parent().find('.errorspan').text(value);
                             }
                         });
+                    }
+                })
+            })
+
+            $(document).on('click', '#deleteajaxitem', function() {
+                if (!confirm("Are you sure?")) return;
+                let routeurl = $(this).data('routeurl');
+                $.ajax({
+                    type: "DELETE",
+                    url: routeurl,
+                    success: function(data) {
+                        table.draw();
+                    },
+                    error: function(data) {
+                        console.log('Error:', data);
+                    }
+                });
+            })
+
+            $(document).on('click', '#viewajaxitem', function() {
+                divViewItems.show();
+                form.hide();
+                btnSave.hide();
+                btnUpdate.hide();
+                modal.modal();
+                modal.find('.modal-title').text('View Item Details');
+                var rowData = table.row($(this).parents('tr')).data();
+                $.each(rowData, function(key, value) {
+                    console.log(key);
+                    if (key == 'images') {
+                        var dataCleanImages = $.parseJSON(value);
+                        var imageHtml = '';
+                        $.each(dataCleanImages, function(key, value) {
+                            imageHtml += '<img src="' + path + '/' + value.replaceAll(
+                                    "\"", "") +
+                                '" width="100" height="auto" class="m-1" />';
+                        });
+                        divViewItems.find('.' + key).empty().append('<h4 class="text-capitalize">'+key.replace('_', ' ')+'</h4>' + imageHtml);
+                    } else {
+                        var heading = '<h4>'+divViewItems.find('.' + key).find('h4').html()+'</h4>'
+                        divViewItems.find('.' + key).empty().append('<h4 class="text-capitalize">'+key.replace('_', ' ')+'</h4>' + value);
                     }
                 })
             })

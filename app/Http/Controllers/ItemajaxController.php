@@ -22,9 +22,9 @@ class ItemajaxController extends Controller
             $ajaxitems = Itemajax::all();
             return datatables()->of($ajaxitems)->addIndexColumn()->escapeColumns([])
                 ->addColumn('action', function ($row) {
-                    $html = '<button class="btn btn-info btn-edit" id="editajaxitem" data-rowid="' . $row->id . '">Edit</button> ';
-                    $html .= '<button class="btn btn-primary btn-view" data-rowid="' . $row->id . '">View</button> ';
-                    $html .= '<button data-rowid="' . $row->id . '" class="btn btn-danger btn-delete">Delete</button>';
+                    $html = '<button class="btn btn-info btn-edit" id="editajaxitem" data-rowid="' . $row->id . '" data-routeurl="'. route('ajaxitems.update', $row->id) .'">Edit</button> ';
+                    $html .= '<button class="btn btn-primary btn-view" data-rowid="' . $row->id . '" id="viewajaxitem" data-routeurl="'. route('ajaxitems.show', $row->id) .'">View</button> ';
+                    $html .= '<button data-rowid="' . $row->id . '" class="btn btn-danger btn-delete" id="deleteajaxitem" data-routeurl="'. route('ajaxitems.destroy', $row->id) .'">Delete</button>';
                     return $html;
                 })->toJson();
         }
@@ -50,13 +50,31 @@ class ItemajaxController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'item_name' => 'required',
-            'descriptions' => 'required',
-            'manufacture_date' => 'required',
-            'images' => 'required',
-            'images.*' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
-        ]);
+        if(!empty($request->id)){
+            if($request->hasfile('images')){
+                $request->validate([
+                    'item_name' => 'required',
+                    'descriptions' => 'required',
+                    'manufacture_date' => 'required',
+                    'images' => 'required',
+                    'images.*' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
+                ]);
+            } else {
+                $request->validate([
+                    'item_name' => 'required',
+                    'descriptions' => 'required',
+                    'manufacture_date' => 'required',
+                ]);
+            }
+        } else {
+            $request->validate([
+                'item_name' => 'required',
+                'descriptions' => 'required',
+                'manufacture_date' => 'required',
+                'images' => 'required',
+                'images.*' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
+            ]);
+        }
         
         if($request->hasfile('images')){
             foreach($request->file('images') as $image){
@@ -66,12 +84,24 @@ class ItemajaxController extends Controller
             }
         }
 
-        $Item_create = new Itemajax();
-        $Item_create->item_name = $request->item_name;
-        $Item_create->descriptions = $request->descriptions;
-        $Item_create->manufacture_date = date("Y-m-d", strtotime($request->manufacture_date));
-        $Item_create->images = json_encode($images_data);
-        $Item_create->save();
+        if($request->hasfile('images')){
+            $Item_create = Itemajax::updateOrCreate(
+                ['id' => $request->id],
+                [
+                'item_name' => $request->item_name,
+                'descriptions' => $request->descriptions,
+                'manufacture_date' => date("Y-m-d", strtotime($request->manufacture_date)),
+                'images' => json_encode($images_data)
+            ]);
+        } else {
+            $Item_create = Itemajax::updateOrCreate(
+                ['id' => $request->id],
+                [
+                'item_name' => $request->item_name,
+                'descriptions' => $request->descriptions,
+                'manufacture_date' => date("Y-m-d", strtotime($request->manufacture_date))
+            ]);
+        }
 
         return response()->json(['code'=>200, 'message'=>'Item created successfully.','data' => $Item_create], 200);
     }
@@ -108,43 +138,9 @@ class ItemajaxController extends Controller
     public function update(Request $request, $id)
     {
         //
-    }
-
-    public function updateitem(Request $request)
-    {
         echo "<pre>";
         print_r($request->all());
         exit();
-
-        $request->validate([
-            'item_name' => 'required',
-            'descriptions' => 'required',
-            'manufacture_date' => 'required',
-        ]);
-        
-        if($request->hasfile('images')){
-            $request->validate([
-                'images' => 'required',
-                'images.*' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
-            ]);
-            foreach($request->file('images') as $image){
-                $name = $image->getClientOriginalName();
-                $image->move(public_path() . '/image/', $name);
-                $images_data[] = $name;
-            }
-        }
-
-        $Item_create = Itemajax::find($request->id);
-        $Item_create->item_name = $request->item_name;
-        $Item_create->descriptions = $request->descriptions;
-        $Item_create->manufacture_date = date("Y-m-d", strtotime($request->manufacture_date));
-        if($request->hasfile('images')){
-            $Item_create->images = json_encode($images_data);
-        }
-        $Item_create->update();
-
-        return response()->json(['code'=>200, 'message'=>'Update Item successfully.','data' => $Item_create], 200);
-
     }
     
     /**
@@ -156,5 +152,8 @@ class ItemajaxController extends Controller
     public function destroy($id)
     {
         //
+        Itemajax::find($id)->delete();
+     
+        return response()->json(['code'=>200, 'message'=>'Item deleted successfully.'], 200);
     }
 }

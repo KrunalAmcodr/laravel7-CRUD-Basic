@@ -11,4 +11,6 @@ class Itemajax extends Model
     use SoftDeletes;
 
     protected $table = 'itemajaxes';
+
+    protected $fillable = ['id', 'item_name', 'descriptions', 'manufacture_date', 'images'];
 }
