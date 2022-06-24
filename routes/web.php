@@ -20,4 +20,6 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::resource('items','ItemController')->middleware('auth');
+Route::get('ajaxitems/items_excelexport','ItemajaxController@items_excel_export')->name('ajaxitems.excelexport');
+Route::get('ajaxitems/items_pdfexport','ItemajaxController@items_pdf_export')->name('ajaxitems.pdfexport');
 Route::resource('ajaxitems','ItemajaxController')->middleware('auth');

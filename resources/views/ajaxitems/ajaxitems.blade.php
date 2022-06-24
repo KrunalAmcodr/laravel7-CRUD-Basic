@@ -25,6 +25,8 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <div class="title">{{ __('Dashboard') }}</div>
                         <div class="addbutton">
+                            <a href="{{ route('ajaxitems.excelexport') }}" class="btn btn-primary">Export Exclesheet</a>
+                            <a href="{{ route('ajaxitems.pdfexport') }}" class="btn btn-primary">Export PDF</a>
                             <button class="btn btn-success" id="addajaxitem">Create New Items</button>
                         </div>
                     </div>
@@ -46,12 +48,12 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th style="width: 50px;">Sr. No</th>
+                                    <th>Sr. No</th>
                                     <th>Item Name</th>
                                     <th>Descriptions</th>
                                     <th>Date</th>
                                     <th>Images</th>
-                                    <th style="width:150px;">Action</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody class="itemtable-body">
@@ -160,17 +162,19 @@
                 columns: [{
                         data: 'id',
                         name: 'id',
-                        'visible': false
+                        'visible': false,
                     },
                     {
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
                         orderable: false,
+                        width:'50px',
                         searchable: false
                     },
                     {
                         data: 'item_name',
-                        name: 'item_name'
+                        name: 'item_name',
+                        width:'100px'
                     },
                     {
                         data: 'descriptions',
@@ -185,7 +189,8 @@
                             // return (month.toString().length > 1 ? month : "0" + month) + "/" + date.getDate() + "/" + date.getFullYear();
                             return (('0' + (date.getMonth() + 1)).slice(-2) + "/" + ('0' + date
                                 .getDate()).slice(-2) + "/" + +date.getFullYear());
-                        }
+                        },
+                        width:'50px',
                     },
                     {
                         data: 'images',
@@ -201,6 +206,7 @@
                             return imageHtml;
                         },
                         orderable: false,
+                        width:'250px',
                         searchable: false
                     },
                     {
@@ -219,10 +225,11 @@
                         },
                         // className: "dt-center editor-edit",
                         // defaultContent: '<i class="bi bi-pencil-square"></i>',
+                        width:'140px',
                         orderable: false,
                         searchable: false
-                    },
-                ]
+                    }
+                ],
             });
 
             btnAdd.click(function() {

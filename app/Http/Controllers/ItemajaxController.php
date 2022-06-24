@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Itemajax;
 use Illuminate\Http\Request;
 use DataTables;
+use App\Exports\ItemExport;
+use Maatwebsite\Excel\Facades\Excel;
+use PDF;
 
 class ItemajaxController extends Controller
 {
@@ -175,5 +178,35 @@ class ItemajaxController extends Controller
         Itemajax::find($id)->delete();
      
         return response()->json(['code'=>200, 'message'=>'Item deleted successfully.'], 200);
+    }
+
+    public function items_excel_export()
+    {
+        return Excel::download(new ItemExport, 'items_'.date('Ymd').'_'.time().'.xlsx');
+    }
+    public function items_pdf_export()
+    {
+        // return Excel::download(new ItemExport,'items_'.date('Ymd').'_'.time().'.pdf', \Maatwebsite\Excel\Excel::DOMPDF);
+        $iteamarray = Itemajax::all();
+        $data = "<style>";
+            $data .="table,th,td{border: 1px solid black;border-collapse: collapse;}";
+            $data .="th,td{padding:10px}";
+        $data .= "</style>";
+        $data .= "<h1>Items Data</h1>";
+        $data .= '<table>';
+            $data .= '<thead>';
+                $data .= '<tr>';
+                    $data .= '<th>Iteam Name</th>';
+                    $data .= '<th>Descriptions</th>';
+                    $data .= '<th>Manufacture Date</th>';
+                    $data .= '<th>Images</th>';
+                $data .= '</tr>';
+            $data .= '</thead>';
+        $data .= '</table>';
+        
+        print_r($data);
+        exit();
+        $pdf = PDF::loadHtml($data);
+        // return $pdf->download('items_'.date('Ymd').'_'.time().'.pdf');
     }
 }
